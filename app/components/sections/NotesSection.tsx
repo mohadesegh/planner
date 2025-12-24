@@ -6,6 +6,30 @@ import { usePlanner } from "app/lib/store";
 
 type Planner = ReturnType<typeof usePlanner>;
 
+function NoteCard({
+	title,
+	value,
+	onChange,
+	rows,
+}: {
+	title: string;
+	value: string;
+	onChange: (v: string) => void;
+	rows: number;
+}) {
+	return (
+		<div className="p-card rounded-2xl p-4">
+			<Label>{title}</Label>
+			<TextArea
+				rows={rows}
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				className="mt-2"
+			/>
+		</div>
+	);
+}
+
 export default function NotesSection({ planner }: { planner: Planner }) {
 	return (
 		<AccordionSection
@@ -15,51 +39,35 @@ export default function NotesSection({ planner }: { planner: Planner }) {
 		>
 			<div className="grid gap-4 lg:grid-cols-2">
 				<div className="space-y-4">
-					<div className="rounded-2xl border bg-white p-4">
-						<Label>Sentence of the day</Label>
-						<TextArea
-							rows={4}
-							value={planner.day.sentenceOfDay}
-							onChange={(e) =>
-								planner.setField("sentenceOfDay", e.target.value)
-							}
-							className="mt-2"
-						/>
-					</div>
+					<NoteCard
+						title="Sentence of the day"
+						value={planner.day.sentenceOfDay}
+						onChange={(v) => planner.setField("sentenceOfDay", v)}
+						rows={4}
+					/>
 
-					<div className="rounded-2xl border bg-white p-4">
-						<Label>Gratitude</Label>
-						<TextArea
-							rows={4}
-							value={planner.day.gratitude}
-							onChange={(e) => planner.setField("gratitude", e.target.value)}
-							className="mt-2"
-						/>
-					</div>
+					<NoteCard
+						title="Gratitude"
+						value={planner.day.gratitude}
+						onChange={(v) => planner.setField("gratitude", v)}
+						rows={4}
+					/>
 				</div>
 
 				<div className="space-y-4">
-					<div className="rounded-2xl border bg-white p-4">
-						<Label>Daily cleaning</Label>
-						<TextArea
-							rows={4}
-							value={planner.day.dailyCleaning}
-							onChange={(e) =>
-								planner.setField("dailyCleaning", e.target.value)
-							}
-							className="mt-2"
-						/>
-					</div>
+					<NoteCard
+						title="Daily cleaning"
+						value={planner.day.dailyCleaning}
+						onChange={(v) => planner.setField("dailyCleaning", v)}
+						rows={4}
+					/>
 
-					<div className="rounded-2xl border bg-white p-4">
-						<Label>Note</Label>
-						<TextArea
-							rows={5}
-							value={planner.day.note}
-							onChange={(e) => planner.setField("note", e.target.value)}
-							className="mt-2"
-						/>
-					</div>
+					<NoteCard
+						title="Note"
+						value={planner.day.note}
+						onChange={(v) => planner.setField("note", v)}
+						rows={5}
+					/>
 				</div>
 			</div>
 		</AccordionSection>

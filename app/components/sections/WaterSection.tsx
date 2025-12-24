@@ -19,12 +19,24 @@ export default function WaterSection({ planner }: { planner: Planner }) {
 						key={idx}
 						type="button"
 						onClick={() => planner.setWater(idx, !v)}
-						className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-gray-800"
+						className={
+							"flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition hover:opacity-90 " +
+							(v ? "p-btn-accent" : "p-btn")
+						}
+						aria-label={`water cup ${idx + 1}`}
 					>
 						<span className="text-lg">💧</span>
 						<IconCheck checked={v} />
 					</button>
 				))}
+			</div>
+
+			<div className="mt-3 text-xs" style={{ color: "var(--p-muted)" }}>
+				Completed:{" "}
+				<b style={{ color: "var(--p-text)" }}>
+					{planner.day.waterCups.filter(Boolean).length}
+				</b>
+				/8
 			</div>
 		</AccordionSection>
 	);

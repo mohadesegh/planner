@@ -25,8 +25,8 @@ export default function SleepMoodSection({ planner }: { planner: Planner }) {
 			subtitle="Track sleep window, pauses, and mood"
 			defaultOpen={true}
 		>
-			<div className="space-y-5 text-black">
-				<div>
+			<div className="space-y-5">
+				<div className="p-card rounded-2xl p-4">
 					<Label>Sleep start / end</Label>
 					<div className="mt-2 grid grid-cols-2 gap-2">
 						<Input
@@ -41,17 +41,17 @@ export default function SleepMoodSection({ planner }: { planner: Planner }) {
 						/>
 					</div>
 
-					<div className="mt-2 rounded-xl border bg-gray-50 p-2 text-sm text-gray-800">
+					<div className="mt-2 p-chip rounded-xl p-2 text-sm">
 						Total sleep: <b>{planner.sleepTotalLabel}</b>
 					</div>
 				</div>
 
-				<div>
+				<div className="p-card rounded-2xl p-4">
 					<div className="flex items-center justify-between">
 						<Label>Pauses</Label>
 						<button
 							type="button"
-							className="rounded-xl border bg-black px-3 py-2 text-sm text-white"
+							className="p-btn-primary rounded-xl px-3 py-2 text-sm hover:opacity-90"
 							onClick={() => planner.addSleepPause()}
 						>
 							+ Add pause
@@ -60,7 +60,9 @@ export default function SleepMoodSection({ planner }: { planner: Planner }) {
 
 					<div className="mt-2 space-y-2">
 						{planner.day.sleep.pauses.length === 0 ? (
-							<div className="text-xs text-gray-500">No pauses added.</div>
+							<div className="text-xs" style={{ color: "var(--p-muted)" }}>
+								No pauses added.
+							</div>
 						) : null}
 
 						{planner.day.sleep.pauses.map((p) => (
@@ -81,7 +83,7 @@ export default function SleepMoodSection({ planner }: { planner: Planner }) {
 								/>
 								<button
 									type="button"
-									className="rounded-xl border bg-white px-3 py-2"
+									className="p-btn rounded-xl px-3 py-2 hover:opacity-90"
 									onClick={() => planner.removeSleepPause(p.id)}
 								>
 									🗑️
@@ -91,7 +93,7 @@ export default function SleepMoodSection({ planner }: { planner: Planner }) {
 					</div>
 				</div>
 
-				<div>
+				<div className="p-card rounded-2xl p-4">
 					<Label>Mood</Label>
 					<div className="mt-2 grid grid-cols-4 gap-2">
 						{MOODS.map((m) => {
@@ -101,8 +103,8 @@ export default function SleepMoodSection({ planner }: { planner: Planner }) {
 									key={m.key}
 									type="button"
 									className={
-										"rounded-xl border p-2 text-sm " +
-										(active ? "bg-black text-white" : "bg-white text-gray-800")
+										"rounded-xl border p-2 text-sm transition hover:opacity-90 " +
+										(active ? "p-btn-primary" : "p-btn")
 									}
 									onClick={() => planner.setMood(active ? null : m.key)}
 									title={m.label}

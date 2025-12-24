@@ -1,12 +1,12 @@
-export function Card(props: React.HTMLAttributes<HTMLDivElement>) {
+export function Card({
+	children,
+	className = "",
+}: {
+	children: React.ReactNode;
+	className?: string;
+}) {
 	return (
-		<div
-			{...props}
-			className={
-				"rounded-2xl border bg-white p-4 text-gray-900 shadow-sm " +
-				(props.className ?? "")
-			}
-		/>
+		<div className={`p-card rounded-2xl p-4 ${className}`}>{children}</div>
 	);
 }
 

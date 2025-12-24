@@ -154,9 +154,17 @@ export function usePlanner(dateKey?: string) {
 		setDB((prev) => {
 			const current = prev.days[key] ?? emptyDay(key);
 			const nextDay = fn(current);
-			return { ...prev, days: { ...prev.days, [key]: nextDay } };
+			const next = { ...prev, days: { ...prev.days, [key]: nextDay } };
+
+			// ✅ notify UI (PlannerShell summary bar)
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(new Event("planner:changed"));
+			}
+
+			return next;
 		});
 	}
+
 
 	function setField<
 		K extends keyof Pick<

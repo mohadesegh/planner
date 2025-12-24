@@ -7,6 +7,15 @@ import type { RowItem } from "app/lib/types";
 
 type Planner = ReturnType<typeof usePlanner>;
 
+function parseNum(v: string): number {
+	const x = Number(String(v).replace(/,/g, "").trim());
+	return Number.isFinite(x) ? x : 0;
+}
+
+function costsTotal(rows: RowItem[]) {
+	return rows.reduce((sum, r) => sum + parseNum(r.value), 0);
+}
+
 function RowTable({
 	rows,
 	onAdd,
@@ -26,14 +35,14 @@ function RowTable({
 		<div className="space-y-2">
 			<div className="flex flex-wrap gap-2">
 				<button
-					className="rounded-xl border bg-black px-3 py-2 text-sm text-white"
+					className="p-btn-primary rounded-xl px-3 py-2 text-sm transition hover:opacity-90"
 					onClick={onAdd}
 					type="button"
 				>
 					+ Add row
 				</button>
 				<button
-					className="rounded-xl border bg-white px-3 py-2 text-sm text-gray-800"
+					className="p-btn rounded-xl px-3 py-2 text-sm transition hover:opacity-90"
 					onClick={onSortPriority}
 					type="button"
 				>
@@ -41,9 +50,15 @@ function RowTable({
 				</button>
 			</div>
 
-			<div className="overflow-x-auto rounded-2xl border bg-white">
+			<div
+				className="overflow-x-auto rounded-2xl border"
+				style={{
+					background: "rgba(252,249,234,0.85)",
+					borderColor: "var(--p-border)",
+				}}
+			>
 				<table className="w-full text-sm">
-					<thead className="bg-gray-50">
+					<thead style={{ background: "rgba(186,223,219,0.45)" }}>
 						<tr className="text-left">
 							<th className="p-2 w-20">Priority</th>
 							<th className="p-2">Title</th>
@@ -52,16 +67,26 @@ function RowTable({
 							<th className="p-2 w-20">Del</th>
 						</tr>
 					</thead>
+
 					<tbody>
 						{rows.length === 0 && (
 							<tr>
-								<td className="p-3 text-gray-500" colSpan={5}>
+								<td
+									className="p-3"
+									colSpan={5}
+									style={{ color: "var(--p-muted)" }}
+								>
 									No rows yet.
 								</td>
 							</tr>
 						)}
+
 						{rows.map((r) => (
-							<tr key={r.id} className="border-t">
+							<tr
+								key={r.id}
+								className="border-t"
+								style={{ borderColor: "var(--p-border)" }}
+							>
 								<td className="p-2">
 									<Input
 										type="number"
@@ -73,6 +98,7 @@ function RowTable({
 										}
 									/>
 								</td>
+
 								<td className="p-2">
 									<Input
 										value={r.title}
@@ -80,6 +106,7 @@ function RowTable({
 										placeholder="Title..."
 									/>
 								</td>
+
 								<td className="p-2">
 									<Input
 										value={r.value}
@@ -87,29 +114,34 @@ function RowTable({
 										placeholder="Amount..."
 									/>
 								</td>
+
 								<td className="p-2">
 									<div className="flex gap-2">
 										<button
-											className="rounded-xl border bg-white px-3 py-2"
+											className="p-btn rounded-xl px-3 py-2 transition hover:opacity-90"
 											onClick={() => onMove(r.id, "up")}
 											type="button"
+											aria-label="move row up"
 										>
 											↑
 										</button>
 										<button
-											className="rounded-xl border bg-white px-3 py-2"
+											className="p-btn rounded-xl px-3 py-2 transition hover:opacity-90"
 											onClick={() => onMove(r.id, "down")}
 											type="button"
+											aria-label="move row down"
 										>
 											↓
 										</button>
 									</div>
 								</td>
+
 								<td className="p-2">
 									<button
-										className="rounded-xl border bg-white px-3 py-2"
+										className="p-btn rounded-xl px-3 py-2 transition hover:opacity-90"
 										onClick={() => onRemove(r.id)}
 										type="button"
+										aria-label="delete row"
 									>
 										🗑️
 									</button>
@@ -124,10 +156,12 @@ function RowTable({
 }
 
 export default function CostsSection({ planner }: { planner: Planner }) {
+	const total = costsTotal(planner.day.costs);
+
 	return (
 		<AccordionSection
 			title="COSTS"
-			subtitle="Title + amount (multiple rows)"
+			subtitle={`Title + amount (multiple rows) • Total: ${Math.round(total)}`}
 			defaultOpen={false}
 		>
 			<RowTable

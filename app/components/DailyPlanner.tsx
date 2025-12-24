@@ -25,8 +25,6 @@ export default function DailyPlanner() {
 	const [selected, setSelected] = useState<string>(toDateKey(new Date()));
 	const planner = usePlanner(selected);
 
-	
-
 	const dateObj = useMemo(() => fromDateKey(selected), [selected]);
 	const weekKeys = useMemo(() => weekKeysAround(dateObj), [dateObj]);
 
@@ -41,13 +39,19 @@ export default function DailyPlanner() {
 			<Card className="p-4">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div>
-						<div className="text-xs font-semibold tracking-widest text-gray-600">
+						<div
+							className="text-xs font-semibold tracking-widest"
+							style={{ color: "var(--p-muted)" }}
+						>
 							TODAY
 						</div>
-						<div className="text-lg font-bold text-gray-900">
+						<div
+							className="text-lg font-bold"
+							style={{ color: "var(--p-text)" }}
+						>
 							{formatPersianPretty(dateObj)}
 						</div>
-						<div className="mt-1 text-xs text-gray-600">
+						<div className="mt-1 text-xs" style={{ color: "var(--p-muted)" }}>
 							{savedLabel}
 							{savedTime ? ` • ${savedTime}` : ""}
 						</div>
@@ -55,7 +59,7 @@ export default function DailyPlanner() {
 
 					<div className="flex flex-wrap items-center gap-2">
 						<button
-							className="rounded-xl border bg-white px-3 py-2 text-sm text-gray-800"
+							className="p-btn rounded-xl px-3 py-2 text-sm hover:opacity-90"
 							onClick={() => setSelected(toDateKey(addDays(dateObj, -1)))}
 							type="button"
 						>
@@ -63,7 +67,7 @@ export default function DailyPlanner() {
 						</button>
 
 						<button
-							className="rounded-xl border bg-white px-3 py-2 text-sm text-gray-800"
+							className="p-btn-accent rounded-xl px-3 py-2 text-sm hover:opacity-90"
 							onClick={() => setSelected(toDateKey(new Date()))}
 							type="button"
 						>
@@ -71,7 +75,7 @@ export default function DailyPlanner() {
 						</button>
 
 						<button
-							className="rounded-xl border bg-white px-3 py-2 text-sm text-gray-800"
+							className="p-btn rounded-xl px-3 py-2 text-sm hover:opacity-90"
 							onClick={() => setSelected(toDateKey(addDays(dateObj, 1)))}
 							type="button"
 						>
@@ -80,10 +84,8 @@ export default function DailyPlanner() {
 
 						<button
 							className={
-								"rounded-xl border px-3 py-2 text-sm " +
-								(planner.isDirty
-									? "bg-black text-white"
-									: "bg-gray-100 text-gray-700")
+								"rounded-xl px-3 py-2 text-sm hover:opacity-90 " +
+								(planner.isDirty ? "p-btn-primary" : "p-btn opacity-70")
 							}
 							onClick={() => planner.saveNow()}
 							disabled={!planner.isDirty}
@@ -94,7 +96,7 @@ export default function DailyPlanner() {
 
 						<Link
 							href="/overview"
-							className="rounded-xl border bg-white px-3 py-2 text-sm text-gray-800"
+							className="p-btn rounded-xl px-3 py-2 text-sm hover:opacity-90"
 						>
 							Overview →
 						</Link>
@@ -107,13 +109,14 @@ export default function DailyPlanner() {
 						const d = fromDateKey(k);
 						const label = formatPersianWeekdayShort(d);
 						const active = k === selected;
+
 						return (
 							<button
 								key={k}
 								onClick={() => setSelected(k)}
 								className={
-									"rounded-full border px-3 py-1 text-sm " +
-									(active ? "bg-black text-white" : "bg-white text-gray-800")
+									"rounded-full px-3 py-1 text-sm hover:opacity-90 " +
+									(active ? "p-btn-primary" : "p-chip")
 								}
 								title={k}
 								type="button"
@@ -125,7 +128,7 @@ export default function DailyPlanner() {
 				</div>
 			</Card>
 
-			{/* Mobile/tablet: Todos first. Desktop: grid with Todo + Sleep/Mood */}
+			{/* layout */}
 			<div className="grid gap-4 lg:grid-cols-3">
 				<div className="order-1 lg:order-2 lg:col-span-2">
 					<TodosSection planner={planner} />
@@ -135,7 +138,6 @@ export default function DailyPlanner() {
 				</div>
 			</div>
 
-			{/* Other sections (accordion) */}
 			<div className="grid gap-4 lg:grid-cols-2">
 				<WaterSection planner={planner} />
 				<CostsSection planner={planner} />

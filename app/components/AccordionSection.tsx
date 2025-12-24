@@ -19,7 +19,7 @@ export default function AccordionSection({
 	const contentId = useId();
 
 	return (
-		<div className="rounded-2xl border bg-white text-black p-4 shadow-sm">
+		<div className="p-card rounded-2xl p-4 shadow-sm">
 			<button
 				type="button"
 				className="flex w-full items-start justify-between gap-3 text-left"
@@ -28,21 +28,26 @@ export default function AccordionSection({
 				aria-controls={contentId}
 			>
 				<div>
-					<div className="text-xs font-semibold tracking-widest text-black">
-						{title}
-					</div>
-					{subtitle && (
-						<div className="mt-1 text-sm text-black">{subtitle}</div>
-					)}
+					<div className="text-xs font-semibold tracking-widest">{title}</div>
+					{subtitle ? (
+						<div className="mt-1 text-sm" style={{ color: "var(--p-muted)" }}>
+							{subtitle}
+						</div>
+					) : null}
 				</div>
 
 				<div className="flex items-center gap-3">
 					{rightSlot}
 					<span
 						className={
-							"select-none rounded-xl border bg-white px-3 py-2 text-sm transition-transform duration-300 " +
+							"select-none rounded-xl px-3 py-2 text-sm transition-transform duration-300 " +
 							(open ? "rotate-180" : "rotate-0")
 						}
+						style={{
+							border: "1px solid var(--p-border)",
+							background: open ? "var(--p-mint)" : "rgba(252,249,234,0.9)",
+							color: "var(--p-text)",
+						}}
 						aria-hidden="true"
 					>
 						▾
@@ -50,7 +55,6 @@ export default function AccordionSection({
 				</div>
 			</button>
 
-			{/* Animated accordion body */}
 			<div
 				id={contentId}
 				className={
