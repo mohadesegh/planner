@@ -1,6 +1,7 @@
+// app/lib/store.ts
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type {
 	DailyData,
 	HabitItem,
@@ -16,9 +17,19 @@ import { toDateKey } from "./date";
 
 const STORAGE_KEY = "planner_db_v7";
 
-const uid = () => crypto.randomUUID();
+/* ---------- defaults (match your image) ---------- */
+const DEFAULT_HABITS: Array<{ title: string; icon: string; priority: number }> =
+	[
+		{ title: "Quit a bad habit", icon: "🚫", priority: 1 },
+		{ title: "Medicine", icon: "💊", priority: 2 },
+		{ title: "Study", icon: "📚", priority: 3 },
+		{ title: "Sport", icon: "🏋️", priority: 4 },
+		{ title: "Skin care", icon: "🧴", priority: 5 },
+		{ title: "Fruit", icon: "🍎", priority: 6 },
+	];
 
 /* ---------- helpers ---------- */
+const uid = () => crypto.randomUUID();
 
 function minutes(v: string) {
 	const [h, m] = v.split(":").map(Number);
@@ -45,34 +56,22 @@ function calcSleep(s: SleepData) {
 	return Math.max(0, total);
 }
 
-function formatHM(mins: number) {
-	if (!mins) return "—";
-	const h = Math.floor(mins / 60);
-	const m = mins % 60;
-	return `${h}h ${m}m`;
-}
-
-function emptyRow(): RowItem {
-	return { id: uid(), title: "", value: "", priority: 10 };
-}
-
-function emptyHabit(): HabitItem {
-	return { id: uid(), title: "", checked: false, priority: 10 };
-}
-
-function emptyTodo(text = ""): TodoItem {
-	return { id: uid(), text, done: false, priority: 10 };
-}
-
 function emptyDay(dateKey: string): DailyData {
 	return {
 		dateKey,
-
 		waterCups: Array(8).fill(false),
 
 		meals: { breakfast: [], lunch: [], snack: [], dinner: [] },
 		costs: [],
-		habits: [],
+
+		// ✅ default habits from your image
+		habits: DEFAULT_HABITS.map((h) => ({
+			id: uid(),
+			title: h.title,
+			icon: h.icon,
+			checked: false,
+			priority: h.priority,
+		})),
 
 		sleep: { start: null, end: null, pauses: [] },
 		mood: null,
@@ -86,29 +85,20 @@ function emptyDay(dateKey: string): DailyData {
 	};
 }
 
-function loadDB(): PlannerDB {
-	if (typeof window === "undefined") {
-		// Server render / build time
-		return { version: 7, days: {} };
-	}
-
+function safeLoadDB(): PlannerDB {
+	if (typeof window === "undefined") return { version: 7, days: {} };
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) return { version: 7, days: {} };
-
 		const parsed = JSON.parse(raw) as PlannerDB;
-		if (!parsed || typeof parsed !== "object") {
-			return { version: 7, days: {} };
-		}
-
+		if (!parsed || typeof parsed !== "object") return { version: 7, days: {} };
 		return parsed;
 	} catch {
 		return { version: 7, days: {} };
 	}
 }
 
-
-function saveDB(db: PlannerDB) {
+function safeSaveDB(db: PlannerDB) {
 	if (typeof window === "undefined") return;
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
 }
@@ -117,33 +107,11 @@ function sortByPriority<T extends { priority: number }>(arr: T[]) {
 	return [...arr].sort((a, b) => a.priority - b.priority);
 }
 
-function moveById<T extends { id: string }>(
-	arr: T[],
-	id: string,
-	dir: "up" | "down"
-) {
-	const idx = arr.findIndex((x) => x.id === id);
-	if (idx === -1) return arr;
-
-	const next = dir === "up" ? idx - 1 : idx + 1;
-	if (next < 0 || next >= arr.length) return arr;
-
-	const copy = [...arr];
-	const tmp = copy[idx];
-	copy[idx] = copy[next];
-	copy[next] = tmp;
-	return copy;
-}
-
 /* ---------- hook ---------- */
-
 export function usePlanner(dateKey?: string) {
 	const key = dateKey ?? toDateKey(new Date());
+	const [db, setDB] = useState<PlannerDB>(() => safeLoadDB());
 
-	// ✅ Load once (no setState-in-effect warning)
-	const [db, setDB] = useState<PlannerDB>(() => loadDB());
-
-	const hydrated = useRef(true);
 	const [isDirty, setIsDirty] = useState(false);
 	const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
@@ -156,7 +124,7 @@ export function usePlanner(dateKey?: string) {
 			const nextDay = fn(current);
 			const next = { ...prev, days: { ...prev.days, [key]: nextDay } };
 
-			// ✅ notify UI (PlannerShell summary bar)
+			// optional UI notifier
 			if (typeof window !== "undefined") {
 				window.dispatchEvent(new Event("planner:changed"));
 			}
@@ -165,46 +133,39 @@ export function usePlanner(dateKey?: string) {
 		});
 	}
 
-
-	function setField<
-		K extends keyof Pick<
-			DailyData,
-			"sentenceOfDay" | "gratitude" | "dailyCleaning" | "note"
-		>
-	>(field: K, value: DailyData[K]) {
-		updateDay((d) => ({ ...d, [field]: value }));
-	}
-
 	function saveNow() {
 		if (typeof window === "undefined") return;
-		saveDB(db);
+		safeSaveDB(db);
 		setIsDirty(false);
 		setLastSavedAt(Date.now());
 	}
-
 
 	function getDay(k: string) {
 		return db.days[k] ?? emptyDay(k);
 	}
 
-	/* ---------- WATER ---------- */
-	function setWater(idx: number, v: boolean) {
+	/* ---------- water ---------- */
+	const setWater = (idx: number, val: boolean) =>
 		updateDay((d) => {
 			const next = [...d.waterCups];
-			next[idx] = v;
+			next[idx] = val;
 			return { ...d, waterCups: next };
 		});
-	}
 
-	/* ---------- MEALS ---------- */
-	function addMealRow(meal: MealKey) {
+	/* ---------- meals ---------- */
+	const addMealRow = (meal: MealKey) =>
 		updateDay((d) => ({
 			...d,
-			meals: { ...d.meals, [meal]: [...d.meals[meal], emptyRow()] },
+			meals: {
+				...d.meals,
+				[meal]: [
+					{ id: uid(), title: "", value: "", priority: 10 },
+					...d.meals[meal],
+				],
+			},
 		}));
-	}
 
-	function updateMealRow(meal: MealKey, id: string, patch: Partial<RowItem>) {
+	const updateMealRow = (meal: MealKey, id: string, patch: Partial<RowItem>) =>
 		updateDay((d) => ({
 			...d,
 			meals: {
@@ -214,114 +175,107 @@ export function usePlanner(dateKey?: string) {
 				),
 			},
 		}));
-	}
 
-	function removeMealRow(meal: MealKey, id: string) {
+	const removeMealRow = (meal: MealKey, id: string) =>
 		updateDay((d) => ({
 			...d,
 			meals: { ...d.meals, [meal]: d.meals[meal].filter((r) => r.id !== id) },
 		}));
-	}
 
-	function moveMealRow(meal: MealKey, id: string, dir: "up" | "down") {
-		updateDay((d) => ({
-			...d,
-			meals: { ...d.meals, [meal]: moveById(d.meals[meal], id, dir) },
-		}));
-	}
+	const moveMealRow = (meal: MealKey, id: string, dir: "up" | "down") =>
+		updateDay((d) => {
+			const rows = [...d.meals[meal]];
+			const idx = rows.findIndex((r) => r.id === id);
+			if (idx < 0) return d;
+			const j = dir === "up" ? idx - 1 : idx + 1;
+			if (j < 0 || j >= rows.length) return d;
+			const tmp = rows[idx];
+			rows[idx] = rows[j];
+			rows[j] = tmp;
+			return { ...d, meals: { ...d.meals, [meal]: rows } };
+		});
 
-	function sortMealByPriority(meal: MealKey) {
+	const sortMealByPriority = (meal: MealKey) =>
 		updateDay((d) => ({
 			...d,
 			meals: { ...d.meals, [meal]: sortByPriority(d.meals[meal]) },
 		}));
-	}
 
-	/* ---------- COSTS ---------- */
-	function addCostRow() {
-		updateDay((d) => ({ ...d, costs: [...d.costs, emptyRow()] }));
-	}
+	/* ---------- costs ---------- */
+	const addCostRow = () =>
+		updateDay((d) => ({
+			...d,
+			costs: [{ id: uid(), title: "", value: "", priority: 10 }, ...d.costs],
+		}));
 
-	function updateCostRow(id: string, patch: Partial<RowItem>) {
+	const updateCostRow = (id: string, patch: Partial<RowItem>) =>
 		updateDay((d) => ({
 			...d,
 			costs: d.costs.map((r) => (r.id === id ? { ...r, ...patch } : r)),
 		}));
-	}
 
-	function removeCostRow(id: string) {
+	const removeCostRow = (id: string) =>
 		updateDay((d) => ({ ...d, costs: d.costs.filter((r) => r.id !== id) }));
-	}
 
-	function moveCostRow(id: string, dir: "up" | "down") {
-		updateDay((d) => ({ ...d, costs: moveById(d.costs, id, dir) }));
-	}
+	const moveCostRow = (id: string, dir: "up" | "down") =>
+		updateDay((d) => {
+			const rows = [...d.costs];
+			const idx = rows.findIndex((r) => r.id === id);
+			if (idx < 0) return d;
+			const j = dir === "up" ? idx - 1 : idx + 1;
+			if (j < 0 || j >= rows.length) return d;
+			const tmp = rows[idx];
+			rows[idx] = rows[j];
+			rows[j] = tmp;
+			return { ...d, costs: rows };
+		});
 
-	function sortCostsByPriority() {
+	const sortCostsByPriority = () =>
 		updateDay((d) => ({ ...d, costs: sortByPriority(d.costs) }));
-	}
 
-	/* ---------- HABITS ---------- */
-	function addHabit(title = "") {
+	/* ---------- habits ---------- */
+	const addHabit = (title: string) =>
 		updateDay((d) => ({
 			...d,
-			habits: [...d.habits, { ...emptyHabit(), title }],
+			habits: [
+				{ id: uid(), title, icon: "⭐", checked: false, priority: 10 },
+				...d.habits,
+			],
 		}));
-	}
 
-	function updateHabit(id: string, patch: Partial<HabitItem>) {
+	const updateHabit = (id: string, patch: Partial<HabitItem>) =>
 		updateDay((d) => ({
 			...d,
 			habits: d.habits.map((h) => (h.id === id ? { ...h, ...patch } : h)),
 		}));
-	}
 
-	function removeHabit(id: string) {
+	const removeHabit = (id: string) =>
 		updateDay((d) => ({ ...d, habits: d.habits.filter((h) => h.id !== id) }));
-	}
 
-	function moveHabit(id: string, dir: "up" | "down") {
-		updateDay((d) => ({ ...d, habits: moveById(d.habits, id, dir) }));
-	}
+	const moveHabit = (id: string, dir: "up" | "down") =>
+		updateDay((d) => {
+			const rows = [...d.habits];
+			const idx = rows.findIndex((h) => h.id === id);
+			if (idx < 0) return d;
+			const j = dir === "up" ? idx - 1 : idx + 1;
+			if (j < 0 || j >= rows.length) return d;
+			const tmp = rows[idx];
+			rows[idx] = rows[j];
+			rows[j] = tmp;
+			return { ...d, habits: rows };
+		});
 
-	function sortHabitsByPriority() {
+	const sortHabitsByPriority = () =>
 		updateDay((d) => ({ ...d, habits: sortByPriority(d.habits) }));
-	}
 
-	/* ---------- TODOS ---------- */
-	function addTodo(text = "") {
-		updateDay((d) => ({ ...d, todos: [emptyTodo(text), ...d.todos] }));
-	}
-
-	function updateTodo(id: string, patch: Partial<TodoItem>) {
-		updateDay((d) => ({
-			...d,
-			todos: d.todos.map((t) => (t.id === id ? { ...t, ...patch } : t)),
-		}));
-	}
-
-	function removeTodo(id: string) {
-		updateDay((d) => ({ ...d, todos: d.todos.filter((t) => t.id !== id) }));
-	}
-
-	function moveTodo(id: string, dir: "up" | "down") {
-		updateDay((d) => ({ ...d, todos: moveById(d.todos, id, dir) }));
-	}
-
-	function sortTodosByPriority() {
-		updateDay((d) => ({ ...d, todos: sortByPriority(d.todos) }));
-	}
-
-	/* ---------- SLEEP ---------- */
-	function setSleepStart(v: string | null) {
+	/* ---------- sleep ---------- */
+	const setSleepStart = (v: string | null) =>
 		updateDay((d) => ({ ...d, sleep: { ...d.sleep, start: v } }));
-	}
 
-	function setSleepEnd(v: string | null) {
+	const setSleepEnd = (v: string | null) =>
 		updateDay((d) => ({ ...d, sleep: { ...d.sleep, end: v } }));
-	}
 
-	function addSleepPause() {
+	const addSleepPause = () =>
 		updateDay((d) => ({
 			...d,
 			sleep: {
@@ -329,9 +283,8 @@ export function usePlanner(dateKey?: string) {
 				pauses: [...d.sleep.pauses, { id: uid(), start: "", end: "" }],
 			},
 		}));
-	}
 
-	function updateSleepPause(id: string, patch: Partial<SleepPause>) {
+	const updateSleepPause = (id: string, patch: Partial<SleepPause>) =>
 		updateDay((d) => ({
 			...d,
 			sleep: {
@@ -341,69 +294,89 @@ export function usePlanner(dateKey?: string) {
 				),
 			},
 		}));
-	}
 
-	function removeSleepPause(id: string) {
+	const removeSleepPause = (id: string) =>
 		updateDay((d) => ({
 			...d,
 			sleep: { ...d.sleep, pauses: d.sleep.pauses.filter((p) => p.id !== id) },
 		}));
-	}
 
 	const sleepMinutes = calcSleep(day.sleep);
-	const sleepTotalLabel = formatHM(sleepMinutes);
+	const sleepTotalLabel =
+		sleepMinutes === 0
+			? "—"
+			: `${Math.floor(sleepMinutes / 60)}h ${sleepMinutes % 60}m`;
 
-	/* ---------- MOOD ---------- */
-	function setMood(m: MoodKey | null) {
-		updateDay((d) => ({ ...d, mood: m }));
-	}
+	/* ---------- mood ---------- */
+	const setMood = (m: MoodKey | null) => updateDay((d) => ({ ...d, mood: m }));
+
+	/* ---------- notes fields ---------- */
+	const setField = (
+		field: "sentenceOfDay" | "gratitude" | "dailyCleaning" | "note",
+		value: string
+	) => updateDay((d) => ({ ...d, [field]: value }));
+
+	/* ---------- todos ---------- */
+	const addTodo = (text: string) =>
+		updateDay((d) => ({
+			...d,
+			todos: [{ id: uid(), text, done: false, priority: 10 }, ...d.todos],
+		}));
+
+	const updateTodo = (id: string, patch: Partial<TodoItem>) =>
+		updateDay((d) => ({
+			...d,
+			todos: d.todos.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+		}));
+
+	const removeTodo = (id: string) =>
+		updateDay((d) => ({ ...d, todos: d.todos.filter((t) => t.id !== id) }));
+
+	const moveTodo = (id: string, dir: "up" | "down") =>
+		updateDay((d) => {
+			const rows = [...d.todos];
+			const idx = rows.findIndex((t) => t.id === id);
+			if (idx < 0) return d;
+			const j = dir === "up" ? idx - 1 : idx + 1;
+			if (j < 0 || j >= rows.length) return d;
+			const tmp = rows[idx];
+			rows[idx] = rows[j];
+			rows[j] = tmp;
+			return { ...d, todos: rows };
+		});
+
+	const sortTodosByPriority = () =>
+		updateDay((d) => ({ ...d, todos: sortByPriority(d.todos) }));
 
 	return {
-		// data
 		day,
 		db,
 		getDay,
 
-		// save state
 		isDirty,
 		lastSavedAt,
 		saveNow,
 
-		// fields
-		setField,
-
-		// water
 		setWater,
 
-		// meals
 		addMealRow,
 		updateMealRow,
 		removeMealRow,
 		moveMealRow,
 		sortMealByPriority,
 
-		// costs
 		addCostRow,
 		updateCostRow,
 		removeCostRow,
 		moveCostRow,
 		sortCostsByPriority,
 
-		// habits
 		addHabit,
 		updateHabit,
 		removeHabit,
 		moveHabit,
 		sortHabitsByPriority,
 
-		// todos
-		addTodo,
-		updateTodo,
-		removeTodo,
-		moveTodo,
-		sortTodosByPriority,
-
-		// sleep
 		setSleepStart,
 		setSleepEnd,
 		addSleepPause,
@@ -411,7 +384,14 @@ export function usePlanner(dateKey?: string) {
 		removeSleepPause,
 		sleepTotalLabel,
 
-		// mood
 		setMood,
+
+		setField,
+
+		addTodo,
+		updateTodo,
+		removeTodo,
+		moveTodo,
+		sortTodosByPriority,
 	};
 }

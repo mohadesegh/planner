@@ -1,43 +1,7 @@
+// app/lib/types.ts
+
 export type MealKey = "breakfast" | "lunch" | "snack" | "dinner";
 
-/* ---------- GENERIC ROW ---------- */
-export type RowItem = {
-	id: string;
-	title: string;
-	value: string;
-	priority: number;
-};
-
-/* ---------- TODO ---------- */
-export type TodoItem = {
-	id: string;
-	text: string;
-	done: boolean;
-	priority: number;
-};
-
-/* ---------- HABIT ---------- */
-export type HabitItem = {
-	id: string;
-	title: string;
-	checked: boolean;
-	priority: number;
-};
-
-/* ---------- SLEEP ---------- */
-export type SleepPause = {
-	id: string;
-	start: string; // HH:mm
-	end: string; // HH:mm
-};
-
-export type SleepData = {
-	start: string | null;
-	end: string | null;
-	pauses: SleepPause[];
-};
-
-/* ---------- MOOD (8) ---------- */
 export type MoodKey =
 	| "awful"
 	| "veryBad"
@@ -48,11 +12,44 @@ export type MoodKey =
 	| "veryGood"
 	| "amazing";
 
-/* ---------- DAILY ---------- */
+export type RowItem = {
+	id: string;
+	title: string;
+	value: string; // calories / amount
+	priority: number;
+};
+
+export type TodoItem = {
+	id: string;
+	text: string;
+	done: boolean;
+	priority: number;
+};
+
+export type SleepPause = {
+	id: string;
+	start: string; // "HH:mm"
+	end: string; // "HH:mm"
+};
+
+export type SleepData = {
+	start: string | null; // "HH:mm"
+	end: string | null; // "HH:mm"
+	pauses: SleepPause[];
+};
+
+export type HabitItem = {
+	id: string;
+	title: string;
+	checked: boolean;
+	priority: number;
+	icon?: string; // ✅ emoji/icon e.g. 💊
+};
+
 export type DailyData = {
 	dateKey: string;
 
-	waterCups: boolean[];
+	waterCups: boolean[]; // 8
 
 	meals: Record<MealKey, RowItem[]>;
 	costs: RowItem[];
