@@ -87,18 +87,29 @@ function emptyDay(dateKey: string): DailyData {
 }
 
 function loadDB(): PlannerDB {
+	if (typeof window === "undefined") {
+		// Server render / build time
+		return { version: 7, days: {} };
+	}
+
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
 		if (!raw) return { version: 7, days: {} };
+
 		const parsed = JSON.parse(raw) as PlannerDB;
-		if (!parsed || typeof parsed !== "object") return { version: 7, days: {} };
+		if (!parsed || typeof parsed !== "object") {
+			return { version: 7, days: {} };
+		}
+
 		return parsed;
 	} catch {
 		return { version: 7, days: {} };
 	}
 }
 
+
 function saveDB(db: PlannerDB) {
+	if (typeof window === "undefined") return;
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
 }
 
@@ -157,11 +168,12 @@ export function usePlanner(dateKey?: string) {
 	}
 
 	function saveNow() {
-		if (!hydrated.current) return;
+		if (typeof window === "undefined") return;
 		saveDB(db);
 		setIsDirty(false);
 		setLastSavedAt(Date.now());
 	}
+
 
 	function getDay(k: string) {
 		return db.days[k] ?? emptyDay(k);

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
 	addDays,
@@ -23,7 +22,6 @@ import CostsSection from "./sections/CostsSection";
 import NotesSection from "./sections/NotesSection";
 
 export default function DailyPlanner() {
-	const sp = useSearchParams();
 	const [selected, setSelected] = useState<string>(toDateKey(new Date()));
 	const planner = usePlanner(selected);
 
