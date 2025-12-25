@@ -1,3 +1,4 @@
+// app/components/DailyPlanner.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -20,6 +21,17 @@ import MealsSection from "./sections/MealsSection";
 import HabitsSection from "./sections/HabitsSection";
 import CostsSection from "./sections/CostsSection";
 import NotesSection from "./sections/NotesSection";
+import QuickNavRail from "./QuickNavRail";
+
+const NAV = [
+	{ id: "todos", label: "Todos" },
+	{ id: "sleep", label: "Sleep & Mood" },
+	{ id: "water", label: "Water" },
+	{ id: "costs", label: "Costs" },
+	{ id: "meals", label: "Meals" },
+	{ id: "habits", label: "Habits" },
+	{ id: "notes", label: "Notes" },
+];
 
 export default function DailyPlanner() {
 	const [selected, setSelected] = useState<string>(toDateKey(new Date()));
@@ -35,6 +47,9 @@ export default function DailyPlanner() {
 
 	return (
 		<div className="space-y-4">
+			{/* Floating quick navigation rail (desktop) */}
+			<QuickNavRail items={NAV} />
+
 			{/* Header */}
 			<Card className="p-4">
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -62,8 +77,10 @@ export default function DailyPlanner() {
 							className="p-btn rounded-xl px-3 py-2 text-sm hover:opacity-90"
 							onClick={() => setSelected(toDateKey(addDays(dateObj, -1)))}
 							type="button"
+							aria-label="previous day"
+							title="Previous day"
 						>
-							← 
+							←
 						</button>
 
 						<button
@@ -78,8 +95,10 @@ export default function DailyPlanner() {
 							className="p-btn rounded-xl px-3 py-2 text-sm hover:opacity-90"
 							onClick={() => setSelected(toDateKey(addDays(dateObj, 1)))}
 							type="button"
+							aria-label="next day"
+							title="Next day"
 						>
-							 →
+							→
 						</button>
 
 						<button
@@ -128,24 +147,41 @@ export default function DailyPlanner() {
 				</div>
 			</Card>
 
-			{/* layout */}
+			{/* Layout: Todos first on mobile/tablet; on desktop: Todos + Sleep/Mood */}
 			<div className="grid gap-4 lg:grid-cols-3">
-				<div className="order-1 lg:order-2 lg:col-span-2">
+				<div
+					id="todos"
+					className="order-1 lg:order-2 lg:col-span-2 scroll-mt-24"
+				>
 					<TodosSection planner={planner} />
 				</div>
-				<div className="order-2 lg:order-1">
+
+				<div id="sleep" className="order-2 lg:order-1 scroll-mt-24">
 					<SleepMoodSection planner={planner} />
 				</div>
 			</div>
 
 			<div className="grid gap-4 lg:grid-cols-2">
-				<WaterSection planner={planner} />
-				<CostsSection planner={planner} />
+				<div id="water" className="scroll-mt-24">
+					<WaterSection planner={planner} />
+				</div>
+
+				<div id="costs" className="scroll-mt-24">
+					<CostsSection planner={planner} />
+				</div>
 			</div>
 
-			<MealsSection planner={planner} />
-			<HabitsSection planner={planner} />
-			<NotesSection planner={planner} />
+			<div id="meals" className="scroll-mt-24">
+				<MealsSection planner={planner} />
+			</div>
+
+			<div id="habits" className="scroll-mt-24">
+				<HabitsSection planner={planner} />
+			</div>
+
+			<div id="notes" className="scroll-mt-24">
+				<NotesSection planner={planner} />
+			</div>
 		</div>
 	);
 }
