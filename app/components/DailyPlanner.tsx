@@ -46,7 +46,7 @@ export default function DailyPlanner() {
 		: "";
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-4 mb-20">
 			{/* Floating quick navigation rail (desktop) */}
 			<QuickNavRail />
 
