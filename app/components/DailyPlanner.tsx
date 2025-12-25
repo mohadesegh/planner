@@ -63,7 +63,7 @@ export default function DailyPlanner() {
 							onClick={() => setSelected(toDateKey(addDays(dateObj, -1)))}
 							type="button"
 						>
-							← Previous day
+							← 
 						</button>
 
 						<button
@@ -79,7 +79,7 @@ export default function DailyPlanner() {
 							onClick={() => setSelected(toDateKey(addDays(dateObj, 1)))}
 							type="button"
 						>
-							Next day →
+							 →
 						</button>
 
 						<button

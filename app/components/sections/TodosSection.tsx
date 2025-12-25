@@ -62,12 +62,21 @@ export default function TodosSection({ planner }: { planner: Planner }) {
 							<div className="w-24">
 								<Input
 									type="number"
-									value={t.priority}
-									onChange={(e) =>
-										planner.updateTodo(t.id, {
-											priority: Number(e.target.value || 999),
-										})
-									}
+									value={String(t.priority)}
+									onChange={(e) => {
+										const v = e.target.value;
+										// allow empty while typing (don't force 999)
+										if (v === "") return;
+										const n = Number(v);
+										if (Number.isFinite(n)) {
+											planner.updateTodo(t.id, { priority: n });
+										}
+									}}
+									onBlur={(e) => {
+										const v = e.target.value.trim();
+										// if user leaves it empty, set a sensible default
+										if (v === "") planner.updateTodo(t.id, { priority: 10 });
+									}}
 								/>
 							</div>
 

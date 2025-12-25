@@ -80,6 +80,7 @@ function emptyDay(dateKey: string): DailyData {
 		gratitude: "",
 		dailyCleaning: "",
 		note: "",
+		cleaningItems: [],
 
 		todos: [],
 	};
@@ -143,6 +144,51 @@ export function usePlanner(dateKey?: string) {
 	function getDay(k: string) {
 		return db.days[k] ?? emptyDay(k);
 	}
+	// ---------- cleaning checklist ----------
+	const addCleaningItem = () =>
+		updateDay((d) => ({
+			...d,
+			cleaningItems: [
+				{ id: uid(), text: "", done: false, priority: 10 },
+				...(d.cleaningItems ?? []),
+			],
+		}));
+
+	const updateCleaningItem = (
+		id: string,
+		patch: Partial<{ text: string; done: boolean; priority: number }>
+	) =>
+		updateDay((d) => ({
+			...d,
+			cleaningItems: (d.cleaningItems ?? []).map((c) =>
+				c.id === id ? { ...c, ...patch } : c
+			),
+		}));
+
+	const removeCleaningItem = (id: string) =>
+		updateDay((d) => ({
+			...d,
+			cleaningItems: (d.cleaningItems ?? []).filter((c) => c.id !== id),
+		}));
+
+	const moveCleaningItem = (id: string, dir: "up" | "down") =>
+		updateDay((d) => {
+			const rows = [...(d.cleaningItems ?? [])];
+			const idx = rows.findIndex((c) => c.id === id);
+			if (idx < 0) return d;
+			const j = dir === "up" ? idx - 1 : idx + 1;
+			if (j < 0 || j >= rows.length) return d;
+			const tmp = rows[idx];
+			rows[idx] = rows[j];
+			rows[j] = tmp;
+			return { ...d, cleaningItems: rows };
+		});
+
+	const sortCleaningByPriority = () =>
+		updateDay((d) => ({
+			...d,
+			cleaningItems: sortByPriority(d.cleaningItems ?? []),
+		}));
 
 	/* ---------- water ---------- */
 	const setWater = (idx: number, val: boolean) =>
@@ -393,5 +439,10 @@ export function usePlanner(dateKey?: string) {
 		removeTodo,
 		moveTodo,
 		sortTodosByPriority,
+		addCleaningItem,
+		updateCleaningItem,
+		removeCleaningItem,
+		moveCleaningItem,
+		sortCleaningByPriority,
 	};
 }

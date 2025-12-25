@@ -18,6 +18,12 @@ export type RowItem = {
 	value: string; // calories / amount
 	priority: number;
 };
+export type CheckItem = {
+	id: string;
+	text: string;
+	done: boolean;
+	priority: number;
+};
 
 export type TodoItem = {
 	id: string;
@@ -62,6 +68,7 @@ export type DailyData = {
 	gratitude: string;
 	dailyCleaning: string;
 	note: string;
+	cleaningItems: CheckItem[];
 
 	todos: TodoItem[];
 };
