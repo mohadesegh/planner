@@ -48,7 +48,7 @@ export default function DailyPlanner() {
 	return (
 		<div className="space-y-4">
 			{/* Floating quick navigation rail (desktop) */}
-			<QuickNavRail items={NAV} />
+			<QuickNavRail />
 
 			{/* Header */}
 			<Card className="p-4">

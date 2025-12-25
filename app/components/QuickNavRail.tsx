@@ -2,94 +2,113 @@
 
 import { useEffect, useState } from "react";
 
-export type QuickNavItem = { id: string; label: string };
+type NavItem = {
+	id: string;
+	label: string;
+	icon: string;
+};
 
-export default function QuickNavRail({
-	items,
-	offset = 90,
-}: {
-	items: QuickNavItem[];
-	offset?: number;
-}) {
-	const [activeId, setActiveId] = useState(items[0]?.id ?? "");
+const ITEMS: NavItem[] = [
+	{ id: "todos", label: "Todos", icon: "📝" },
+	{ id: "sleep", label: "Sleep & Mood", icon: "😴" },
+	{ id: "water", label: "Water", icon: "💧" },
+	{ id: "costs", label: "Costs", icon: "💸" },
+	{ id: "meals", label: "Meals", icon: "🍽️" },
+	{ id: "habits", label: "Habits", icon: "✅" },
+	{ id: "notes", label: "Notes", icon: "📓" },
+];
 
-	function scrollTo(id: string) {
-		const el = document.getElementById(id);
-		if (!el) return;
-		const top = el.getBoundingClientRect().top + window.scrollY - offset;
-		window.scrollTo({ top, behavior: "smooth" });
-	}
+export default function QuickNav() {
+	const [active, setActive] = useState<string>("");
 
 	useEffect(() => {
-		const els = items
-			.map((n) => document.getElementById(n.id))
-			.filter(Boolean) as HTMLElement[];
-
-		if (els.length === 0) return;
-
-		const io = new IntersectionObserver(
+		const observer = new IntersectionObserver(
 			(entries) => {
-				const visible = entries
-					.filter((e) => e.isIntersecting)
-					.sort(
-						(a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0)
-					)[0];
-
-				if (visible?.target?.id) setActiveId(visible.target.id);
+				entries.forEach((e) => {
+					if (e.isIntersecting) {
+						setActive(e.target.id);
+					}
+				});
 			},
-			{
-				root: null,
-				rootMargin: "-40% 0px -55% 0px",
-				threshold: [0.01, 0.1, 0.25, 0.5],
-			}
+			{ rootMargin: "-40% 0px -55% 0px" }
 		);
 
-		els.forEach((el) => io.observe(el));
-		return () => io.disconnect();
-	}, [items]);
+		ITEMS.forEach((item) => {
+			const el = document.getElementById(item.id);
+			if (el) observer.observe(el);
+		});
+
+		return () => observer.disconnect();
+	}, []);
 
 	return (
-		<div className="flex fixed right-4 top-1/2 -translate-y-1/2 z-50 flex-col gap-3">
-			{items.map((it) => {
-				const active = it.id === activeId;
-
-				return (
-					<button
-						key={it.id}
-						type="button"
-						onClick={() => scrollTo(it.id)}
-						className="group relative"
-						aria-label={`Jump to ${it.label}`}
-					>
-						<span
-							className={
-								"block transition-all duration-200 " +
-								(active
-									? "h-4 w-2 rounded-full shadow-md"
-									: "h-2 w-2 rounded-full opacity-50 group-hover:opacity-100")
+		<>
+			{/* Desktop / Tablet */}
+			<div
+				className="fixed right-4 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-2 rounded-2xl p-2 shadow-md md:flex"
+				style={{ background: "var(--p-surface)" }}
+			>
+				{ITEMS.map((item) => {
+					const isActive = active === item.id;
+					return (
+						<button
+							key={item.id}
+							onClick={() =>
+								document
+									.getElementById(item.id)
+									?.scrollIntoView({ behavior: "smooth", block: "start" })
 							}
-							style={{
-								background: active ? "var(--p-accent)" : "var(--p-muted)",
-								boxShadow: active
-									? "0 0 0 3px rgba(0,0,0,0.1), 0 0 8px rgba(0,0,0,0.15)"
-									: "none",
-							}}
-						/>
-
-						<span
-							className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 whitespace-nowrap
-                         rounded-xl px-3 py-1 text-xs opacity-0 shadow transition group-hover:opacity-100"
-							style={{
-								background: "rgba(255,255,255,0.92)",
-								border: "1px solid var(--p-border)",
-								color: "var(--p-text)",
-							}}
+							className={
+								"group relative flex h-11 w-11 items-center justify-center rounded-full transition " +
+								(isActive
+									? "bg-[var(--p-primary)] text-white"
+									: "bg-white/80 hover:bg-white")
+							}
+							aria-label={item.label}
 						>
-							{it.label}
-						</span>
-					</button>
-				);
-			})}
-		</div>
+							<span className="text-lg">{item.icon}</span>
+
+							{/* Hover label */}
+							<span className="pointer-events-none absolute right-14 whitespace-nowrap rounded-lg bg-black px-3 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100">
+								{item.label}
+							</span>
+						</button>
+					);
+				})}
+			</div>
+
+			{/* Mobile bottom bar */}
+			<div
+				className="fixed bottom-3 left-1/2 z-40 flex -translate-x-1/2 gap-2 rounded-2xl p-2 shadow-2xl md:hidden"
+				style={{
+					background: "color-mix(in srgb, var(--p-surface) 90%, transparent)",
+					backdropFilter: "blur(20px)",
+					WebkitBackdropFilter: "blur(20px)",
+				}}
+			>
+				{ITEMS.map((item) => {
+					const isActive = active === item.id;
+					return (
+						<button
+							key={item.id}
+							onClick={() =>
+								document
+									.getElementById(item.id)
+									?.scrollIntoView({ behavior: "smooth", block: "start" })
+							}
+							className={
+								"flex h-10 w-10 items-center justify-center rounded-xl transition " +
+								(isActive
+									? "bg-[var(--p-primary)] text-white"
+									: "text-gray-700")
+							}
+							aria-label={item.label}
+						>
+							{item.icon}
+						</button>
+					);
+				})}
+			</div>
+		</>
 	);
 }

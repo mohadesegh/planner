@@ -1,3 +1,4 @@
+// app/components/sections/NotesSection.tsx
 "use client";
 
 import AccordionSection from "../AccordionSection";
@@ -30,11 +31,34 @@ function NoteCard({
 	);
 }
 
+function PriorityInput({
+	value,
+	onChange,
+}: {
+	value: number;
+	onChange: (n: number) => void;
+}) {
+	return (
+		<Input
+			type="number"
+			value={String(value)}
+			onChange={(e) => {
+				const v = e.target.value;
+				if (v === "") return;
+				const n = Number(v);
+				if (Number.isFinite(n)) onChange(n);
+			}}
+			onBlur={(e) => {
+				if (e.target.value.trim() === "") onChange(10);
+			}}
+		/>
+	);
+}
+
 export default function NotesSection({ planner }: { planner: Planner }) {
-	const cleaningDone = (planner.day.cleaningItems ?? []).filter(
-		(c) => c.done
-	).length;
-	const cleaningTotal = (planner.day.cleaningItems ?? []).length;
+	const cleaningItems = planner.day.cleaningItems ?? [];
+	const cleaningDone = cleaningItems.filter((c) => c.done).length;
+	const cleaningTotal = cleaningItems.length;
 
 	return (
 		<AccordionSection
@@ -43,6 +67,7 @@ export default function NotesSection({ planner }: { planner: Planner }) {
 			defaultOpen={false}
 		>
 			<div className="grid gap-4 lg:grid-cols-2">
+				{/* Left column */}
 				<div className="space-y-4">
 					<NoteCard
 						title="Sentence of the day"
@@ -59,10 +84,11 @@ export default function NotesSection({ planner }: { planner: Planner }) {
 					/>
 				</div>
 
+				{/* Right column */}
 				<div className="space-y-4">
-					{/* ✅ Daily cleaning as checklist */}
+					{/* Daily cleaning checklist */}
 					<div className="p-card rounded-2xl p-4">
-						<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<div>
 								<Label>Daily cleaning</Label>
 								<div
@@ -73,10 +99,10 @@ export default function NotesSection({ planner }: { planner: Planner }) {
 								</div>
 							</div>
 
-							<div className="flex gap-2">
+							<div className="flex flex-wrap gap-2">
 								<button
 									type="button"
-									className="p-btn-primary rounded-xl px-3 py-2 text-sm hover:opacity-90"
+									className="p-btn-primary rounded-xl px-4 py-3 text-sm hover:opacity-90"
 									onClick={() => planner.addCleaningItem()}
 								>
 									+ Add item
@@ -84,7 +110,7 @@ export default function NotesSection({ planner }: { planner: Planner }) {
 
 								<button
 									type="button"
-									className="p-btn rounded-xl px-3 py-2 text-sm hover:opacity-90"
+									className="p-btn rounded-xl px-4 py-3 text-sm hover:opacity-90"
 									onClick={() => planner.sortCleaningByPriority()}
 								>
 									Sort
@@ -92,17 +118,126 @@ export default function NotesSection({ planner }: { planner: Planner }) {
 							</div>
 						</div>
 
-						<div className="mt-3 space-y-2">
-							{(planner.day.cleaningItems ?? []).length === 0 ? (
+						{/* ✅ MOBILE: EXACT SAME STRUCTURE AS COSTS ITEM */}
+						<div className="mt-3 space-y-3 md:hidden">
+							{cleaningItems.length === 0 ? (
 								<div
-									className="p-chip rounded-xl p-3 text-sm"
+									className="p-card rounded-2xl p-4 text-sm"
 									style={{ color: "var(--p-muted)" }}
 								>
 									No cleaning items yet.
 								</div>
 							) : null}
 
-							{(planner.day.cleaningItems ?? []).map((c) => (
+							{cleaningItems.map((c) => (
+								<div key={c.id} className="p-card rounded-2xl p-4">
+									{/* Row 1: Priority + Done (same as Costs: Priority + Amount) */}
+									<div className="grid grid-cols-2 gap-4">
+										<div>
+											<div
+												className="text-xs font-semibold"
+												style={{ color: "var(--p-muted)" }}
+											>
+												Priority
+											</div>
+											<div className="mt-2">
+												<PriorityInput
+													value={c.priority}
+													onChange={(n) =>
+														planner.updateCleaningItem(c.id, { priority: n })
+													}
+												/>
+											</div>
+										</div>
+
+										<div>
+											<div
+												className="text-xs font-semibold"
+												style={{ color: "var(--p-muted)" }}
+											>
+												Done
+											</div>
+											<div className="mt-2">
+												<button
+													type="button"
+													className="p-btn w-full rounded-xl px-4 py-3 text-sm hover:opacity-90 flex items-center justify-center gap-2"
+													onClick={() =>
+														planner.updateCleaningItem(c.id, { done: !c.done })
+													}
+												>
+													<IconCheck checked={c.done} />
+													{c.done ? "Done" : "Not done"}
+												</button>
+											</div>
+										</div>
+
+										{/* Row 2: Title full width (same as Costs: Title full width) */}
+										<div className="col-span-2">
+											<div
+												className="text-xs font-semibold"
+												style={{ color: "var(--p-muted)" }}
+											>
+												Task
+											</div>
+											<div className="mt-2">
+												<Input
+													value={c.text}
+													onChange={(e) =>
+														planner.updateCleaningItem(c.id, {
+															text: e.target.value,
+														})
+													}
+													placeholder="Cleaning task..."
+													className={c.done ? "line-through opacity-70" : ""}
+												/>
+											</div>
+										</div>
+									</div>
+
+									{/* Row 3: Order controls (same as our fixed mobile order) */}
+									<div className="mt-4 grid grid-cols-[1fr_1fr_56px] gap-3">
+										<button
+											className="p-btn rounded-xl px-4 py-3 text-sm hover:opacity-90"
+											onClick={() => planner.moveCleaningItem(c.id, "up")}
+											type="button"
+										>
+											↑ Up
+										</button>
+
+										<button
+											className="p-btn rounded-xl px-4 py-3 text-sm hover:opacity-90"
+											onClick={() => planner.moveCleaningItem(c.id, "down")}
+											type="button"
+										>
+											↓ Down
+										</button>
+
+										<button
+											className="p-btn rounded-xl py-3 text-sm hover:opacity-90"
+											onClick={() => planner.removeCleaningItem(c.id)}
+											type="button"
+											aria-label="delete"
+											title="delete"
+										>
+											🗑️
+										</button>
+									</div>
+								</div>
+							))}
+						</div>
+
+						{/* DESKTOP: compact row layout */}
+						<div className="mt-3 hidden md:block space-y-2">
+							{cleaningItems.length === 0 ? (
+								<div
+									className="p-chip rounded-2xl p-3 text-sm"
+									style={{ color: "var(--p-muted)" }}
+								>
+									No cleaning items yet.
+								</div>
+							) : null}
+
+							{cleaningItems.map((c) => (
 								<div key={c.id} className="p-chip rounded-2xl p-2">
 									<div className="flex flex-wrap items-center gap-2">
 										<button
@@ -117,24 +252,15 @@ export default function NotesSection({ planner }: { planner: Planner }) {
 										</button>
 
 										<div className="w-24">
-											<Input
-												type="number"
-												value={String(c.priority)}
-												onChange={(e) => {
-													const v = e.target.value;
-													if (v === "") return;
-													const n = Number(v);
-													if (Number.isFinite(n))
-														planner.updateCleaningItem(c.id, { priority: n });
-												}}
-												onBlur={(e) => {
-													if (e.target.value.trim() === "")
-														planner.updateCleaningItem(c.id, { priority: 10 });
-												}}
+											<PriorityInput
+												value={c.priority}
+												onChange={(n) =>
+													planner.updateCleaningItem(c.id, { priority: n })
+												}
 											/>
 										</div>
 
-										<div className="flex-1 min-w-[200px]">
+										<div className="flex-1 min-w-[220px]">
 											<Input
 												value={c.text}
 												onChange={(e) =>
